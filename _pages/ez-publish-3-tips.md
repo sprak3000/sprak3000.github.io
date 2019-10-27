@@ -1,8 +1,13 @@
 ---
 permalink: /ez-publish-3-tips/
 title: "eZ Publish 3.X Tips"
+classes: wide
 toc: true
 toc_label: "Table of Contents"
+tags:
+  - ezpublish
+  - cms
+  - software development
 ---
 
 # Overview
