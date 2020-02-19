@@ -77,9 +77,6 @@ author:
 
 footer:
   links:
-    - label: "Lupin III Encyclopedia"
-      icon: "fas fa-fw fa-link"
-      url: "https://www.lupinencyclopedia.com/"
     - label: "Twitter"
       icon: "fab fa-fw fa-twitter-square"
       url: "https://twitter.com/sprak"
@@ -89,6 +86,15 @@ footer:
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
       url: "https://instagram.com/sprak3000"
+    - label: "Lupin III Encyclopedia"
+      icon: "fas fa-fw fa-link"
+      url: "https://www.lupinencyclopedia.com/"
+    - label: "Anime Video Game Resource Center"
+      icon: "fas fa-fw fa-link"
+      url: "https://www.lupinencyclopedia.com/avrc/"
+    - label: "DVD Collection"
+      icon: "fas fa-fw fa-link"
+      url: "http://www.invelos.com/DVDCollection.aspx/sprak"
 
 defaults:
   # _posts

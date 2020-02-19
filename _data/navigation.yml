@@ -1,8 +1,10 @@
 main:
   - title: "Posts"
     url: /posts/
-  - title: "Categories"
-    url: /categories/
+  - title: "Japan 2005"
+    url: /japan-2005/
+#  - title: "Categories"
+#    url: /categories/
   - title: "Tags"
     url: /tags/
   - title: "About"
