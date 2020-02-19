@@ -58,13 +58,13 @@ plugins:
   - jekyll-include-cache
 
 author:
-  name   : "Luis Cruz"
-  avatar : "/assets/images/bio-photo.jpg"
-  bio    : "My awesome biography constrained to a sentence or two goes here."
+  name: "Luis Cruz"
+  avatar: "/assets/images/bio-photo.jpg"
+  bio: "My awesome biography constrained to a sentence or two goes here."
   links:
-#    - label: "Website"
-#      icon: "fas fa-fw fa-link"
-#      url: "https://"
+    #    - label: "Website"
+    #      icon: "fas fa-fw fa-link"
+    #      url: "https://"
     - label: "Twitter"
       icon: "fab fa-fw fa-twitter-square"
       url: "https://twitter.com/sprak"
@@ -98,7 +98,7 @@ defaults:
       read_time: true
       comments: true
       share: true
-      related: true
+      related: false
   # _pages
   - scope:
       path: "_pages"
@@ -113,3 +113,10 @@ category_archive:
 tag_archive:
   type: liquid
   path: /tags/
+
+# Enable comments via staticman provider
+repository: sprak3000/sprak3000.github.io
+
+# Staticman comments (full configuration in staticman.yml)
+staticman:
+  branch: "master"
