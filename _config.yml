@@ -114,9 +114,11 @@ tag_archive:
   type: liquid
   path: /tags/
 
-# Enable comments via staticman provider
 repository: sprak3000/sprak3000.github.io
 
 # Staticman comments (full configuration in staticman.yml)
+comments:
+  provider: "staticman_v2"
+
 staticman:
   branch: "master"
