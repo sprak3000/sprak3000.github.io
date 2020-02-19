@@ -60,11 +60,11 @@ plugins:
 author:
   name: "Luis Cruz"
   avatar: "/assets/images/bio-photo.jpg"
-  bio: "My awesome biography constrained to a sentence or two goes here."
+  bio: "First time caller, long time listener"
   links:
-    #    - label: "Website"
-    #      icon: "fas fa-fw fa-link"
-    #      url: "https://"
+    - label: "Lupin III Encyclopedia"
+      icon: "fas fa-fw fa-link"
+      url: "https://www.lupinencyclopedia.com/"
     - label: "Twitter"
       icon: "fab fa-fw fa-twitter-square"
       url: "https://twitter.com/sprak"
@@ -86,6 +86,15 @@ footer:
     - label: "Instagram"
       icon: "fab fa-fw fa-instagram"
       url: "https://instagram.com/sprak3000"
+    - label: "Lupin III Encyclopedia"
+      icon: "fas fa-fw fa-link"
+      url: "https://www.lupinencyclopedia.com/"
+    - label: "Anime Video Game Resource Center"
+      icon: "fas fa-fw fa-link"
+      url: "https://www.lupinencyclopedia.com/avrc/"
+    - label: "DVD Collection"
+      icon: "fas fa-fw fa-link"
+      url: "http://www.invelos.com/DVDCollection.aspx/sprak"
 
 defaults:
   # _posts
