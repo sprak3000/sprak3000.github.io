@@ -1,5 +1,5 @@
 ---
-permalink: /blog/2007/06/inu-yasha-volume-46/
+permalink: /blog/2006/10/inu-yasha-volume-46/
 title: "Review: <em>Inu Yasha</em> Volume 46"
 last_modified_at: 2006-10-02T10:30:08-05:00
 categories:
