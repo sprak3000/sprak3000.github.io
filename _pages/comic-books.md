@@ -6,5 +6,13 @@ tags:
   - comics
 ---
 
-| Title | Issue(s) | 
-| ----- | ----- | 
+<table>
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Issue(s)</th>
+        </tr>
+    </thead>
+    <tbody>
+    </tbody>
+</table>
