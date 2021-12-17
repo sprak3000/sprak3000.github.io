@@ -1,7 +1,7 @@
 ---
-permalink: /blog/2021/07/arrange-desktop-hammerspoon/
+permalink: /blog/2021/12/arrange-desktop-hammerspoon/
 title: "Hammerspoon your way to a tidy desktop"
-last_modified_at: 2021-07-01T22:13:01-05:00
+last_modified_at: 2021-12-17T22:13:01-05:00
 classes: wide
 categories:
   - Blog
@@ -19,7 +19,7 @@ monitors. This lead to the problem of having to reposition and size my windows e
 to me there must be a better way, a way to automate this process and have my windows size and locate themselves with
 ease. I never foresaw my journey leading me to the power of the [Hammerspoon](https://www.hammerspoon.org/).
 
-What is Hammerspoon you ask? They state it quite succinctly:
+What is Hammerspoon you ask?
 > This is a tool for powerful automation of OS X. At its core, Hammerspoon is just a bridge between the operating system
 > and a Lua scripting engine. What gives Hammerspoon its power is a set of extensions that expose specific pieces of
 > system functionality, to the user.
@@ -40,8 +40,8 @@ As I dug in to understanding the _how_ behind it, my mind began to race with way
 configuration was a very manual process. Could I rework this logic to detect the current positions of the windows and
 auto generate the configuration for you?
 
-After a few months and several iterations, I finally had written my first Spoon! It satisfied my actual need to arrange
-my application windows on my desktop precisely, and I satisfied my desire to learn Lua. A pull request later to the
+After a few months and several iterations, I finally had written my first Spoon! It satisfied both my need to arrange
+my application windows on my desktop precisely and my desire to learn Lua. A pull request later to the
 official repo, and [ArrangeDesktop](https://www.hammerspoon.org/Spoons/ArrangeDesktop.html) was live!
 
 While it was live, it did not feel particularly friendly to use. There were too many steps to get your arrangement setup
@@ -110,7 +110,7 @@ You now wield the power to switch your desktop layouts with a click of your mous
 You may need to edit your configuration to weed out these "duplicates".
 {: .notice--info}
 
-One item my Spoon does not address are [Spaces](https://support.apple.com/guide/mac-help/work-in-multiple-spaces-mh14112/mac).
+My Spoon does not address the use of [Spaces](https://support.apple.com/guide/mac-help/work-in-multiple-spaces-mh14112/mac).
 Dennis' code does account for Spaces, but they fall under an undocumented API. While trying to get Arrange Desktop to
 work, I found Spaces data to be unreliable. The IDs for them would frequently change making it difficult to restore to
 them consistently. Given access to multiple monitors, I have not used Spaces in a long time and decided to omit support
