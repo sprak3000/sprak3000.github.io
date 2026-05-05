@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Why Is Luis Grumpy? — The Grumpiness Index</title>
+    <meta
+      name="description"
+      content="A small interactive tool that calculates Luis's current grumpiness based on sleep, tea, meetings, weather, and Slack pings."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/styles.css" />
+    <script src="assets/script.js" defer></script>
+  </head>
+  <body data-page="home">
+    <header class="site-header">
+      <div class="container">
+        <a href="index.html" class="site-title">Why Is Luis Grumpy?</a>
+        <nav aria-label="Primary">
+          <ul class="nav-list">
+            <li><a href="index.html" data-nav="home">The Index</a></li>
+            <li><a href="about.html" data-nav="about">About</a></li>
+            <li><a href="theories.html" data-nav="theories">Theories</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="intro" aria-labelledby="intro-heading">
+        <h1 id="intro-heading">The Grumpiness Index</h1>
+        <p class="lede">
+          Move the sliders. The cat will judge. Your inputs persist across
+          refresh, because being grumpy is a long-term commitment.
+        </p>
+      </section>
+
+      <section class="tool" aria-labelledby="tool-heading">
+        <h2 id="tool-heading" class="visually-hidden">Calculator</h2>
+
+        <form id="grumpiness-form" class="tool-grid" novalidate>
+          <fieldset class="tool-inputs">
+            <legend class="visually-hidden">Inputs</legend>
+
+            <label class="field">
+              <span class="field-label">
+                Hours of sleep last night
+                <output for="sleep" class="field-value" id="sleep-value">7</output>
+              </span>
+              <input type="range" id="sleep" name="sleep" min="0" max="12" step="0.5" value="7" />
+            </label>
+
+            <label class="field">
+              <span class="field-label">
+                Cups of tea today
+                <output for="tea" class="field-value" id="tea-value">2</output>
+              </span>
+              <input type="range" id="tea" name="tea" min="0" max="5" step="0.5" value="2" />
+            </label>
+
+            <div class="field">
+              <label class="field-label" for="meetings">
+                Meetings on the calendar
+                <output for="meetings" class="field-value" id="meetings-value">3</output>
+              </label>
+              <input type="range" id="meetings" name="meetings" min="0" max="10" step="1" value="3" aria-describedby="meetings-status" />
+              <p class="field-meta" id="meetings-meta" aria-live="polite">
+                <span id="meetings-status"></span>
+                <button type="button" class="link-button" id="meetings-reset" hidden>↺ Reset to actual</button>
+              </p>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Weather today</span>
+              <p class="weather-impact" id="weather-impact" aria-live="polite"></p>
+              <div class="weather-pills" id="weather-pills" aria-live="polite">
+                <span class="weather-pill weather-pill--loading">Checking the sky&hellip;</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="pings">
+                Slack pings today
+                <output for="pings" class="field-value" id="pings-value">15</output>
+              </label>
+              <input type="range" id="pings" name="pings" min="0" max="50" step="1" value="15" aria-describedby="pings-status" />
+              <p class="field-meta" id="pings-meta" aria-live="polite">
+                <span id="pings-status"></span>
+                <button type="button" class="link-button" id="pings-reset" hidden>↺ Reset to actual</button>
+              </p>
+            </div>
+          </fieldset>
+
+          <aside class="tool-result" aria-live="polite">
+            <p class="result-label">Today's Grumpiness Index</p>
+            <p class="result-score" id="score">42</p>
+            <p class="result-verdict" id="verdict">Mildly Tardar</p>
+            <figure class="result-figure">
+              <img
+                id="verdict-image"
+                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSHNzBpeJNv7wURH5IyfSvmAydgFtmmZ9WjJQ&s"
+                alt="A grumpy-looking cat with a permanently downturned mouth, glaring at the camera with mild disdain."
+                width="240"
+                height="240"
+              />
+              <figcaption id="verdict-caption">Baseline functional. Avoid sudden movements.</figcaption>
+            </figure>
+          </aside>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>
+          A small site about a small mood. Read the
+          <a href="about.html">About</a> page for the earnest part, or
+          peruse the <a href="theories.html">Theories</a> for the rest.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>
