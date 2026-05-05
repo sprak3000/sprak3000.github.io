@@ -433,10 +433,22 @@
   // Either key may be null if its source failed to collect — the
   // corresponding section of the page falls back to its hint copy.
 
+  // Resolve where to fetch today.json from. Production sites set the
+  // `grumpy-data-url` meta to a secret-gist raw URL; local dev leaves
+  // it blank and reads the file the refresh script writes locally.
+  // The query-string cachebust defeats GitHub's CDN cache (~5 min on
+  // gist.githubusercontent.com); harmless for the local file.
+  const resolveLiveDataUrl = () => {
+    const meta = document.querySelector('meta[name="grumpy-data-url"]');
+    const base = (meta && meta.content.trim()) || "assets/today.json";
+    const sep = base.includes("?") ? "&" : "?";
+    return `${base}${sep}_=${Date.now()}`;
+  };
+
   let liveDataPromise = null;
   const loadLiveData = () => {
     if (!liveDataPromise) {
-      liveDataPromise = fetch("assets/today.json", { cache: "no-store" })
+      liveDataPromise = fetch(resolveLiveDataUrl(), { cache: "no-store" })
         .then((res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           return res.json();
