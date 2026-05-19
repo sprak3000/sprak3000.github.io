@@ -22,9 +22,13 @@
   let liveWeatherCategory = DEFAULTS.weather;
   let lastLiveWeather = null;
 
+  // Sum of modifier shifts applied on top of WEATHER_SHIFTS[category].
+  // Updated when fresh live weather arrives; consumed by calculateScore.
+  let liveWeatherModifierShift = 0;
+
   // How each weather category shifts the grumpiness score. Shared by
   // calculateScore and the impact-caption renderer so they can't drift.
-  const WEATHER_SHIFTS = { sunny: -10, cloudy: 0, rainy: 5, cold: 10 };
+  const WEATHER_SHIFTS = { sunny: -10, cloudy: 0, rainy: 5, cold: 10, hot: 10 };
 
   // Site voice: short, observational, lightly amused.
   const WEATHER_IMPACT_TEXT = {
@@ -32,6 +36,7 @@
     cloudy: "Cloudy day — weather's staying out of it",
     rainy: "Rain's adding a small grump tax",
     cold: "Cold's piling on",
+    hot: "Heat's wearing him down",
   };
 
   const VERDICTS = [
@@ -83,7 +88,8 @@
     const teaBoost = -((1 - Math.abs(tea - 2.5) / 2.5) * 10);
     const meetingPenalty = meetings * 3;
     const pingPenalty = (pings / 50) * 25;
-    const weatherShift = WEATHER_SHIFTS[weather] ?? 0;
+    const weatherShift =
+      (WEATHER_SHIFTS[weather] ?? 0) + liveWeatherModifierShift;
     const base = 35;
     return clamp(
       0,
@@ -188,9 +194,11 @@
   // ----------------------------------------------------------
   // Live weather → radio mapping
   // ----------------------------------------------------------
-  // Snow and chill win over the coded condition because "cold" is a
-  // temperature judgment, not a sky judgment. Anything below 50°F
-  // counts as cold per Luis's lived experience.
+  // Temperature extremes win over sky conditions because Luis judges
+  // weather by how miserable it makes him, not what's overhead.
+  // 60°F or below is cold (or any snow, regardless of temp);
+  // 85°F or above is hot. The middle band falls through to the sky
+  // categories (sunny/cloudy) or the rain check.
   const categorizeWeather = (current) => {
     const code = current.weather_code;
     const temp = current.temperature_2m;
@@ -205,7 +213,8 @@
       code >= 95;
     if (isWet) return "rainy";
 
-    if (temp < 50) return "cold";
+    if (temp <= 60) return "cold";
+    if (temp >= 85) return "hot";
 
     if (code === 0 || code === 1) return "sunny";
 
@@ -213,11 +222,57 @@
     return "cloudy";
   };
 
+  // Modifiers that stack on top of the base category shift. Each one
+  // returns a { shift, blurb } pair — shift adds to the score, blurb
+  // gets appended to the impact caption so the user can see why the
+  // number is higher than the base category alone would suggest.
+  const weatherModifiers = (current, category) => {
+    const code = current.weather_code;
+    const humidity = current.relative_humidity_2m;
+    const precip = current.precipitation;
+
+    const isSnow =
+      (code >= 71 && code <= 77) || (code >= 85 && code <= 86);
+
+    const mods = [];
+
+    // Category-direct intensifiers first — they describe the same
+    // kind of weather, just more intensely, so they read most
+    // naturally right next to the base impact text.
+    if (isSnow) {
+      mods.push({ shift: 5, blurb: "with snow making it worse" });
+    }
+
+    // Heavy precipitation only counts as a modifier when the category
+    // is already rainy — a stray shower on a sunny day is already
+    // reflected in the wet WMO codes elsewhere.
+    if (precip >= 0.15 && category === "rainy") {
+      mods.push({ shift: 3, blurb: "and it's coming down hard" });
+    }
+
+    // Humidity is a separate factor on top of whatever else is going
+    // on, so it gets appended last.
+    if (humidity >= 70) {
+      if (category === "hot") {
+        mods.push({ shift: 5, blurb: "and the humidity is making it gross" });
+      } else if (category === "cold") {
+        mods.push({ shift: 3, blurb: "with a damp chill on top" });
+      } else {
+        mods.push({ shift: 2, blurb: "with sticky humidity" });
+      }
+    }
+
+    return mods;
+  };
+
   // Called when fresh live weather arrives. Updates the score-driving
-  // category and pushes the new state through the normal pipeline.
+  // category, computes modifier shifts, and pushes the new state
+  // through the normal pipeline.
   const applyLiveWeather = (current) => {
     liveWeatherCategory = categorizeWeather(current);
-    renderWeatherImpact(liveWeatherCategory);
+    const mods = weatherModifiers(current, liveWeatherCategory);
+    liveWeatherModifierShift = mods.reduce((sum, m) => sum + m.shift, 0);
+    renderWeatherImpact(liveWeatherCategory, mods);
     const form = document.getElementById("grumpiness-form");
     if (!form) return;
     const next = readForm(form);
@@ -230,19 +285,28 @@
   const formatShift = (shift) =>
     shift > 0 ? `+${shift}` : `−${Math.abs(shift)}`;
 
-  const renderWeatherImpact = (category) => {
+  const renderWeatherImpact = (category, mods) => {
     const node = document.getElementById("weather-impact");
     if (!node) return;
-    const text = WEATHER_IMPACT_TEXT[category];
-    const shift = WEATHER_SHIFTS[category];
-    if (text === undefined || shift === undefined) {
+    const baseText = WEATHER_IMPACT_TEXT[category];
+    const baseShift = WEATHER_SHIFTS[category];
+    if (baseText === undefined || baseShift === undefined) {
       node.textContent = "";
       return;
     }
-    node.textContent =
-      shift === 0
-        ? `${text}.`
-        : `${text} (${formatShift(shift)} to the index).`;
+
+    const modList = mods || [];
+    const totalShift =
+      baseShift + modList.reduce((sum, m) => sum + m.shift, 0);
+
+    let caption = baseText;
+    if (modList.length) {
+      caption += ", " + modList.map((m) => m.blurb).join(", ");
+    }
+    caption +=
+      totalShift === 0 ? "." : ` (${formatShift(totalShift)} to the index).`;
+
+    node.textContent = caption;
   };
 
   // ----------------------------------------------------------
@@ -254,7 +318,7 @@
   const WEATHER_URL =
     "https://api.open-meteo.com/v1/forecast" +
     "?latitude=42.2079&longitude=-71.0040" +
-    "&current=temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,is_day" +
+    "&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,wind_speed_10m,is_day" +
     "&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch" +
     "&timezone=America%2FNew_York";
 
@@ -337,6 +401,7 @@
   const weatherPills = (current) => {
     const temp = Math.round(current.temperature_2m);
     const feels = Math.round(current.apparent_temperature);
+    const humidity = Math.round(current.relative_humidity_2m);
     const isDay = current.is_day === 1;
     const code = current.weather_code;
     const precip = current.precipitation;
@@ -362,7 +427,8 @@
       icon: wmoIcon(code, isDay),
     });
 
-    // Conditional extras.
+    // Conditional extras — only shown when meaningful.
+    if (humidity >= 70) pills.push({ label: `${humidity}% humidity` });
     if (precip > 0) pills.push({ label: `${precip.toFixed(2)}″ precip` });
     if (wind >= 15) pills.push({ label: `${wind} mph wind` });
 
