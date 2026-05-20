@@ -26,6 +26,19 @@
   // Updated when fresh live weather arrives; consumed by calculateScore.
   let liveWeatherModifierShift = 0;
 
+  // Per-meeting bonus points for meetings overlapping lunch (12:00–13:00)
+  // and meetings starting at or after 16:00. Live data populates the
+  // counts; these constants set how much each one stings the score.
+  const MEETINGS_LUNCH_PENALTY = 2;
+  const MEETINGS_LATE_PENALTY = 2;
+
+  // Fixed score bonuses derived from today's meeting breakdown. Set
+  // when live meetings data arrives, consumed by calculateScore.
+  // Independent of the slider — these reflect what *actually*
+  // happened today, not the user's "what if" exploration.
+  let liveMeetingsLunchBonus = 0;
+  let liveMeetingsLateBonus = 0;
+
   // How each weather category shifts the grumpiness score. Shared by
   // calculateScore and the impact-caption renderer so they can't drift.
   const WEATHER_SHIFTS = { sunny: -10, cloudy: 0, rainy: 5, cold: 10, hot: 10 };
@@ -86,7 +99,8 @@
     const sleepPenalty = clamp(0, 30, (8 - sleep) * 5);
     // Tea peaks at 2.5 cups; further from the peak = less boost.
     const teaBoost = -((1 - Math.abs(tea - 2.5) / 2.5) * 10);
-    const meetingPenalty = meetings * 3;
+    const meetingPenalty =
+      meetings * 3 + liveMeetingsLunchBonus + liveMeetingsLateBonus;
     const pingPenalty = (pings / 50) * 25;
     const weatherShift =
       (WEATHER_SHIFTS[weather] ?? 0) + liveWeatherModifierShift;
@@ -524,6 +538,8 @@
   };
   const meetingsState = {
     actual: null, // null = unknown, number once loaded
+    lunch: 0,
+    late: 0,
     snapped: false,
   };
 
@@ -570,15 +586,32 @@
     const ageMs = Date.now() - new Date(data.generated_at).getTime();
     const isStale = ageMs > 24 * 60 * 60 * 1000;
     meetingsState.actual = data.count;
+    meetingsState.lunch = typeof data.lunch === "number" ? data.lunch : 0;
+    meetingsState.late = typeof data.late === "number" ? data.late : 0;
+
+    // Score bonuses for time-of-day disruption. Read from the day's
+    // actual schedule, applied irrespective of slider position.
+    liveMeetingsLunchBonus = meetingsState.lunch * MEETINGS_LUNCH_PENALTY;
+    liveMeetingsLateBonus = meetingsState.late * MEETINGS_LATE_PENALTY;
 
     const noun = data.count === 1 ? "meeting" : "meetings";
+    const breakdown = [];
+    if (meetingsState.lunch > 0) {
+      breakdown.push(`${meetingsState.lunch} over lunch`);
+    }
+    if (meetingsState.late > 0) {
+      breakdown.push(`${meetingsState.late} after 4PM`);
+    }
+    const breakdownStr =
+      breakdown.length > 0 ? ` — ${breakdown.join(", ")}` : "";
+
     if (isStale) {
       setMeetingsStatus(
-        `Today: ${data.count} ${noun} (stale — re-run refresh.sh).`,
+        `Today: ${data.count} ${noun}${breakdownStr} (stale — re-run refresh.sh).`,
       );
     } else {
       setMeetingsStatus(
-        `Today: ${data.count} ${noun} · updated ${formatAge(ageMs)}.`,
+        `Today: ${data.count} ${noun}${breakdownStr} · updated ${formatAge(ageMs)}.`,
       );
     }
 
