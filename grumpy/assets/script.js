@@ -748,6 +748,43 @@
   };
 
   // ----------------------------------------------------------
+  // Live tea & sleep (user-declared via xbar plugin preferences)
+  // ----------------------------------------------------------
+  // The refresh script reads VAR_TEA and VAR_SLEEP from xbar's
+  // plugin variables and writes them into today.json. On page load
+  // we snap both sliders to whatever the user has declared. After
+  // that, sliding is transient — refresh the page to re-snap to
+  // xbar's current values, or update xbar prefs and wait for the
+  // next refresh.
+  const initLiveTeaSleep = async () => {
+    let payload;
+    try {
+      payload = await loadLiveData();
+    } catch {
+      return; // silent — sliders keep their localStorage values
+    }
+
+    const form = document.getElementById("grumpiness-form");
+    if (!form) return;
+
+    let changed = false;
+    if (typeof payload.tea === "number") {
+      form.elements.tea.value = String(payload.tea);
+      changed = true;
+    }
+    if (typeof payload.sleep === "number") {
+      form.elements.sleep.value = String(payload.sleep);
+      changed = true;
+    }
+
+    if (changed) {
+      // Re-render through the normal save/render pipeline. Dispatching
+      // on one element is enough — the listener reads the whole form.
+      form.elements.tea.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+
+  // ----------------------------------------------------------
   // Boot
   // ----------------------------------------------------------
   setActiveNav();
@@ -757,4 +794,5 @@
   initLiveMeetings();
   wirePingsButtons();
   initLivePings();
+  initLiveTeaSleep();
 })();
