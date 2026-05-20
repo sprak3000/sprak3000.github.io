@@ -715,9 +715,11 @@
     // and mouse interaction, so this needs no extra JS guarding.
     slider.min = String(data.count);
 
-    // Make sure max can accommodate today's count plus headroom.
-    const currentMax = parseInt(slider.max, 10) || 50;
-    if (data.count >= currentMax) slider.max = String(data.count + 25);
+    // Always give 100 points of headroom above actual so the slider
+    // can simulate a much worse afternoon. Unconditional — the user
+    // should be able to drag from the floor up to +100 regardless of
+    // where the slider's original max happened to be.
+    slider.max = String(data.count + 100);
 
     // Auto-snap to actual on first load. After that, only nudge up
     // when the persisted value would now violate the new floor.
