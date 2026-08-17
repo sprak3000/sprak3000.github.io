@@ -26,6 +26,12 @@
   // Updated when fresh live weather arrives; consumed by calculateScore.
   let liveWeatherModifierShift = 0;
 
+  // Live shift from the GitHub and Claude status pages. 0 when both
+  // are up; climbs with outage severity × how long they've been down.
+  // Set by applyLiveStatus, consumed by calculateScore. Fully live —
+  // not tied to any slider, same as the weather shift.
+  let liveStatusShift = 0;
+
   // Per-meeting bonus points for meetings overlapping lunch (12:00–13:00)
   // and meetings starting at or after 16:00. Live data populates the
   // counts; these constants set how much each one stings the score.
@@ -114,7 +120,8 @@
           teaBoost +
           meetingPenalty +
           pingPenalty +
-          weatherShift,
+          weatherShift +
+          liveStatusShift,
       ),
     );
   };
@@ -449,8 +456,9 @@
     return pills;
   };
 
-  const renderWeatherPills = (pills, modifier) => {
-    const node = document.getElementById("weather-pills");
+  // Generic pill renderer, shared by the weather and dev-tools blocks.
+  // Each pill is a string or { label, icon?, background?, color? }.
+  const renderPillsInto = (node, pills, modifier) => {
     if (!node) return;
     const els = pills.map((raw) => {
       const pill = typeof raw === "string" ? { label: raw } : raw;
@@ -480,6 +488,9 @@
     node.replaceChildren(...els);
   };
 
+  const renderWeatherPills = (pills, modifier) =>
+    renderPillsInto(document.getElementById("weather-pills"), pills, modifier);
+
   const initLiveWeather = () => {
     if (!document.getElementById("weather-pills")) return;
 
@@ -499,6 +510,144 @@
         const impact = document.getElementById("weather-impact");
         if (impact) impact.textContent = "";
       });
+  };
+
+  // ----------------------------------------------------------
+  // Live dev-tool status (GitHub + Claude, via Statuspage)
+  // ----------------------------------------------------------
+  // Both services run Atlassian Statuspage, whose summary.json is a
+  // public, CORS-open, no-key endpoint — same fetch model as weather.
+  // Each response carries:
+  //   status.indicator  → "none" | "minor" | "major" | "critical"
+  //   incidents[]       → active (unresolved) incidents, each with a
+  //                       started_at timestamp. The earliest one tells
+  //                       us how long the outage has been running.
+  // The score shift is severity points × a duration ramp, so it's a
+  // combination of *whether* a tool is down and *how long* it's been
+  // down — purely "right now," no cross-run bookkeeping.
+  const STATUS_SERVICES = [
+    { key: "github", name: "GitHub", url: "https://www.githubstatus.com/api/v2/summary.json" },
+    { key: "claude", name: "Claude", url: "https://status.claude.com/api/v2/summary.json" },
+  ];
+
+  // Points a sustained outage of each severity is worth. Dev tooling
+  // being down directly blocks work, so it bites — but the ceiling
+  // (both critical → +24) still leaves the index able to move.
+  const STATUS_SEVERITY = { none: 0, minor: 4, major: 8, critical: 12 };
+
+  // Duration ramp: 0.5 the instant a tool goes down (already annoying),
+  // rising to 1.0 once the outage has run this many minutes.
+  const STATUS_RAMP_CAP_MIN = 90;
+  const statusDurationFactor = (minutesDown) => {
+    if (minutesDown == null) return 0.5;
+    return 0.5 + 0.5 * clamp(0, 1, minutesDown / STATUS_RAMP_CAP_MIN);
+  };
+
+  const statusPenalty = (svc) =>
+    (STATUS_SEVERITY[svc.indicator] ?? 0) * statusDurationFactor(svc.minutesDown);
+
+  // "12 min", "1 hr 5 min", "2 hr".
+  const formatMinutes = (min) => {
+    const m = Math.max(0, Math.round(min));
+    if (m < 60) return `${m} min`;
+    const hr = Math.floor(m / 60);
+    const rem = m % 60;
+    return rem === 0 ? `${hr} hr` : `${hr} hr ${rem} min`;
+  };
+
+  // 🟢 up · 🟡 minor · 🟠 major · 🔴 critical.
+  const STATUS_ICON = { none: "🟢", minor: "🟡", major: "🟠", critical: "🔴" };
+
+  // Site voice: short, factual, a little put-upon.
+  const STATUS_PHRASE = {
+    minor: (name) => `${name} is a little flaky`,
+    major: (name) => `${name} is down`,
+    critical: (name) => `${name} is hard down`,
+  };
+
+  // Reduce a Statuspage summary to just what we score and render.
+  const readServiceStatus = (name, data) => {
+    const indicator =
+      (data && data.status && data.status.indicator) || "none";
+
+    // Earliest active incident's start → minutes down. Absent when a
+    // component is degraded without a formal incident; leave null so
+    // the duration ramp falls back to its 0.5 floor.
+    let minutesDown = null;
+    const incidents = (data && data.incidents) || [];
+    const starts = incidents
+      .map((i) => new Date(i.started_at || i.created_at).getTime())
+      .filter((t) => Number.isFinite(t));
+    if (indicator !== "none" && starts.length) {
+      minutesDown = (Date.now() - Math.min(...starts)) / 60000;
+    }
+
+    return { name, indicator, minutesDown };
+  };
+
+  const statusPill = (svc) => {
+    const icon = STATUS_ICON[svc.indicator] || STATUS_ICON.none;
+    if (svc.indicator === "none") {
+      return { label: `${svc.name} — operational`, icon };
+    }
+    const dur = svc.minutesDown == null ? "" : ` · ${formatMinutes(svc.minutesDown)}`;
+    return { label: `${svc.name} — ${svc.indicator}${dur}`, icon };
+  };
+
+  const renderStatusImpact = (services, totalShift) => {
+    const node = document.getElementById("status-impact");
+    if (!node) return;
+
+    const down = services.filter((s) => s.indicator !== "none");
+    if (!down.length) {
+      node.textContent = "";
+      return;
+    }
+
+    const phrases = down.map((s) => {
+      const make = STATUS_PHRASE[s.indicator] || STATUS_PHRASE.major;
+      const dur =
+        s.minutesDown == null ? "" : ` (${formatMinutes(s.minutesDown)} and counting)`;
+      return `${make(s.name)}${dur}`;
+    });
+
+    node.textContent = `${phrases.join(" · ")} (+${Math.round(totalShift)} to the index).`;
+  };
+
+  const initLiveStatus = () => {
+    if (!document.getElementById("status-pills")) return;
+
+    // Fetch every service independently so one being unreachable never
+    // suppresses the others. A failed fetch yields a null result that
+    // renders as an error pill and contributes 0 to the score.
+    Promise.all(
+      STATUS_SERVICES.map((svc) =>
+        fetch(svc.url, { cache: "no-store" })
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+          })
+          .then((data) => readServiceStatus(svc.name, data))
+          .catch(() => null),
+      ),
+    ).then((results) => {
+      // Render error pills for any service we couldn't reach, then
+      // score only the ones that came back.
+      const pills = results.map((r, i) =>
+        r ? statusPill(r) : `Couldn't reach ${STATUS_SERVICES[i].name}`,
+      );
+      renderPillsInto(document.getElementById("status-pills"), pills);
+
+      const ok = results.filter(Boolean);
+      liveStatusShift = ok.reduce((sum, s) => sum + statusPenalty(s), 0);
+      renderStatusImpact(ok, liveStatusShift);
+
+      const form = document.getElementById("grumpiness-form");
+      if (!form) return;
+      const next = readForm(form);
+      saveState(next);
+      render(next);
+    });
   };
 
   // ----------------------------------------------------------
@@ -792,6 +941,7 @@
   setActiveNav();
   initIndex();
   initLiveWeather();
+  initLiveStatus();
   wireMeetingsButtons();
   initLiveMeetings();
   wirePingsButtons();
