@@ -6,7 +6,7 @@
     <title>Why Is Luis Grumpy? — The Grumpiness Index</title>
     <meta
       name="description"
-      content="A small interactive tool that calculates Luis's current grumpiness based on sleep, tea, meetings, weather, and Slack pings."
+      content="A small interactive tool that calculates Luis's current grumpiness based on sleep, tea, meetings, weather, Slack pings, and whether GitHub and Claude are down."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,6 +15,13 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="assets/styles.css" />
+    <!--
+      Public URL for today.json — secret gist's raw URL. The page
+      always reads from here so dev and prod see the same data.
+      To go local-only (for offline dev, faster iteration, etc.),
+      blank the content and the page will fall back to
+      assets/today.json. See GIST_SETUP.md.
+    -->
     <meta name="grumpy-data-url"
           content="https://gist.githubusercontent.com/sprak3000/552986b0f36f54c86c52f543b2a5ef86/raw/today.json" />
     <script src="assets/script.js" defer></script>
@@ -82,6 +89,14 @@
               <p class="weather-impact" id="weather-impact" aria-live="polite"></p>
               <div class="weather-pills" id="weather-pills" aria-live="polite">
                 <span class="weather-pill weather-pill--loading">Checking the sky&hellip;</span>
+              </div>
+            </div>
+
+            <div class="field">
+              <span class="field-label">Dev tools right now</span>
+              <p class="weather-impact" id="status-impact" aria-live="polite"></p>
+              <div class="weather-pills" id="status-pills" aria-live="polite">
+                <span class="weather-pill weather-pill--loading">Checking GitHub &amp; Claude&hellip;</span>
               </div>
             </div>
 
